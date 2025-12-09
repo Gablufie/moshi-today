@@ -126,41 +126,41 @@ function MainSite() {
         </div>
       </div>
 
-      {/* TOURS GRID — PERFECT SIZE */}
+      {/* TOURS GRID — MOBILE PERFECT */}
       <div className="px-4 pb-20">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {/* TODAY ONLY */}
-          <div className="group relative bg-gradient-to-br from-red-600 to-orange-600 rounded-2xl p-8 text-center shadow-xl hover:shadow-red-500/40 transition-all duration-400 hover:scale-105">
-            <div className="text-6xl mb-4 animate-pulse">flash</div>
-            <h3 className="text-2xl font-black mb-2">TODAY ONLY</h3>
-            <p className="text-lg font-bold">LAST-MINUTE SPOTS</p>
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {/* TODAY ONLY CARD */}
+          <div className="group relative bg-gradient-to-br from-red-600 to-orange-600 rounded-2xl p-6 text-center shadow-xl hover:shadow-red-500/40 transition-all duration-400 hover:scale-105">
+            <div className="text-5xl mb-3 animate-pulse">flash</div>
+            <h3 className="text-xl font-black mb-1">TODAY ONLY</h3>
+            <p className="text-base font-bold">LAST-MINUTE SPOTS</p>
           </div>
 
-          {/* REAL TOURS */}
+          {/* REAL TOURS — MOBILE FRIENDLY */}
           {activeTours.length > 0 ? activeTours.map(tour => (
-            <div key={tour.id} className={`group relative ${cardBg} backdrop-blur-xl rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border`}>
-              <div className="text-4xl font-black mb-2">{tour.time}</div>
-              <div className="bg-red-600 text-white inline-block px-4 py-1 rounded-full text-sm font-bold mb-3">
+            <div key={tour.id} className={`group relative ${cardBg} backdrop-blur-xl rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border`}>
+              <div className="text-3xl font-black mb-2">{tour.time}</div>
+              <div className="bg-red-600 text-white inline-block px-3 py-1 rounded-full text-xs font-bold mb-3">
                 {tour.seats} seats left
               </div>
-              <h3 className="text-lg font-bold mb-3 line-clamp-2">{tour.title}</h3>
-              <p className="text-sm opacity-80 mb-4">Guide: {tour.guide}</p>
-              <div className="text-3xl font-black bg-gradient-to-r from-amber-400 to-red-500 bg-clip-text text-transparent mb-4">
+              <h3 className="text-base font-bold mb-2 line-clamp-2 leading-tight">{tour.title}</h3>
+              <p className="text-xs opacity-80 mb-3">Guide: {tour.guide}</p>
+              <div className="text-2xl font-black bg-gradient-to-r from-amber-400 to-red-500 bg-clip-text text-transparent mb-3">
                 {tour.price}
               </div>
-              <button className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-black py-3 rounded-xl font-bold text-sm hover:shadow-cyan-500/50 transition transform hover:scale-105">
+              <button className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-black py-2.5 rounded-xl font-bold text-sm hover:shadow-cyan-500/50 transition">
                 Book Now
               </button>
             </div>
           )) : (
-            <div className="col-span-full text-center py-20 text-2xl opacity-50">
+            <div className="col-span-full text-center py-20 text-xl opacity-50">
               No tours available right now
             </div>
           )}
         </div>
       </div>
 
-      {/* MORE WAYS — SAME PERFECT SIZE AS TOURS */}
+      {/* MORE WAYS — ALSO MOBILE PERFECT */}
       <MoreWays />
 
       {/* FOOTER */}
