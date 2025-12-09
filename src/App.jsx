@@ -26,7 +26,6 @@ function MainSite() {
   const [isDark, setIsDark] = useState(true)
   const [tours, setTours] = useState([])
 
-  // Theme
   useEffect(() => {
     const saved = localStorage.getItem('moshi-theme')
     if (saved === 'light') setIsDark(false)
@@ -38,7 +37,6 @@ function MainSite() {
     localStorage.setItem('moshi-theme', newMode ? 'dark' : 'light')
   }
 
-  // REAL TOURS FROM FIREBASE
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'tours'), (snapshot) => {
       const tourData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -47,7 +45,6 @@ function MainSite() {
     return unsub
   }, [])
 
-  // Weather
   useEffect(() => {
     fetch('https://api.open-meteo.com/v1/forecast?latitude=-3.35&longitude=37.33&current=temperature_2m&timezone=Africa/Dar_es_Salaam')
       .then(r => r.json())
@@ -75,10 +72,12 @@ function MainSite() {
   return (
     <div className={`min-h-screen ${bg} transition-all duration-500 relative`}>
       {/* TOGGLE */}
-      <button onClick={toggleTheme}
+      <button
+        onClick={toggleTheme}
         className={`fixed top-6 right-6 z-50 p-3 rounded-full backdrop-blur-xl shadow-2xl transition-all hover:scale-110 ${
           isDark ? 'bg-white/20 hover:bg-white/30 text-yellow-400' : 'bg-black/20 hover:bg-black/30 text-gray-800'
-        }`}>
+        }`}
+      >
         {isDark ? <SunIcon /> : <MoonIcon />}
       </button>
 
@@ -111,12 +110,15 @@ function MainSite() {
         <div className="max-w-2xl mx-auto">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             {categories.map(cat => (
-              <button key={cat.id} onClick={() => setFilter(cat.id)}
+              <button
+                key={cat.id}
+                onClick={() => setFilter(cat.id)}
                 className={`py-3.5 rounded-xl font-bold text-sm transition-all ${
                   filter === cat.id
                     ? 'bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg scale-105 ring-2 ring-white/30'
                     : isDark ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-100 hover:bg-gray-200'
-                }`}>
+                }`}
+              >
                 {cat.label}
               </button>
             ))}
@@ -124,47 +126,41 @@ function MainSite() {
         </div>
       </div>
 
-      {/* TOURS GRID */}
+      {/* TOURS GRID — PERFECT SIZE */}
       <div className="px-4 pb-20">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {/* TODAY ONLY CARD */}
-          <div className="group relative bg-gradient-to-br from-red-600 to-orange-600 rounded-3xl p-10 text-center shadow-xl hover:shadow-red-500/40 transition-all duration-400 hover:scale-105 border border-red-400/40">
-            <div className="text-7xl mb-6 animate-pulse">flash</div>
-            <h3 className="text-3xl font-black mb-3">TODAY ONLY</h3>
-            <p className="text-xl font-bold mb-2">LAST-MINUTE SPOTS</p>
-            <p className="text-sm opacity-90">Limited seats • Happening today</p>
-            <div className="mt-8">
-              <span className="inline-block bg-white/25 backdrop-blur px-6 py-2.5 rounded-full text-sm font-bold border border-white/30">
-                Book fast!
-              </span>
-            </div>
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {/* TODAY ONLY */}
+          <div className="group relative bg-gradient-to-br from-red-600 to-orange-600 rounded-2xl p-8 text-center shadow-xl hover:shadow-red-500/40 transition-all duration-400 hover:scale-105">
+            <div className="text-6xl mb-4 animate-pulse">flash</div>
+            <h3 className="text-2xl font-black mb-2">TODAY ONLY</h3>
+            <p className="text-lg font-bold">LAST-MINUTE SPOTS</p>
           </div>
 
-          {/* REAL TOURS FROM FIREBASE */}
+          {/* REAL TOURS */}
           {activeTours.length > 0 ? activeTours.map(tour => (
-            <div key={tour.id} className={`group relative ${cardBg} backdrop-blur-xl rounded-3xl p-10 text-center shadow-xl hover:shadow-emerald-500/40 transition-all duration-400 hover:scale-105 border`}>
-              <div className="text-6xl font-black mb-4">{tour.time}</div>
-              <div className="bg-red-600 inline-block px-6 py-2 rounded-full text-base font-bold mb-5 text-white">
+            <div key={tour.id} className={`group relative ${cardBg} backdrop-blur-xl rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border`}>
+              <div className="text-4xl font-black mb-2">{tour.time}</div>
+              <div className="bg-red-600 text-white inline-block px-4 py-1 rounded-full text-sm font-bold mb-3">
                 {tour.seats} seats left
               </div>
-              <h3 className="text-2xl font-black mb-4 leading-tight">{tour.title}</h3>
-              <p className={`text-base opacity-80 mb-6 ${isDark ? '' : 'text-gray-700'}`}>Guide: {tour.guide}</p>
-              <div className="text-5xl font-black bg-gradient-to-r from-amber-400 to-red-500 bg-clip-text text-transparent mb-6">
+              <h3 className="text-lg font-bold mb-3 line-clamp-2">{tour.title}</h3>
+              <p className="text-sm opacity-80 mb-4">Guide: {tour.guide}</p>
+              <div className="text-3xl font-black bg-gradient-to-r from-amber-400 to-red-500 bg-clip-text text-transparent mb-4">
                 {tour.price}
               </div>
-              <button className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-black px-10 py-4 rounded-full font-bold text-base shadow-md hover:shadow-cyan-500/50 transition transform hover:scale-110">
+              <button className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-black py-3 rounded-xl font-bold text-sm hover:shadow-cyan-500/50 transition transform hover:scale-105">
                 Book Now
               </button>
             </div>
           )) : (
-            <div className="col-span-full text-center py-20 text-4xl opacity-50">
+            <div className="col-span-full text-center py-20 text-2xl opacity-50">
               No tours available right now
             </div>
           )}
         </div>
       </div>
 
-      {/* MORE WAYS SECTION */}
+      {/* MORE WAYS — SAME PERFECT SIZE AS TOURS */}
       <MoreWays />
 
       {/* FOOTER */}
