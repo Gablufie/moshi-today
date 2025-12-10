@@ -20,11 +20,79 @@ const MoonIcon = () => (
   </svg>
 )
 
+// M-PESA STK PUSH — FINAL WORKING VERSION
+const payWithMpesa = async (phone, amount, reference) => {
+  const CONSUMER_KEY = "5hoWfchSxz3z7BCu0bd0xuWK5H6CRTOX"
+  const CONSUMER_SECRET = "5hoWfchSxz3z7BCu0bd0xuWK5H6CRTOX"
+  const SHORTCODE = "174379"
+  const PASSKEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
+
+  const cleanPhone = phone.replace(/\D/g, "")
+  const finalPhone = cleanPhone.startsWith("255") ? cleanPhone : "255" + cleanPhone.replace(/^0/, "")
+
+  if (finalPhone.length !== 12) {
+    alert("Wrong phone. Use 0712... or 255712...")
+    return
+  }
+
+  const timestamp = new Date().toISOString().replace(/[^0-9]/g, "").slice(0, 14)
+  const password = btoa(SHORTCODE + PASSKEY + timestamp)
+  const auth = btoa(CONSUMER_KEY + ":" + CONSUMER_SECRET)
+
+  try {
+    const tokenRes = await fetch("/mpesa/oauth/v1/generate?grant_type=client_credentials", {
+      headers: { Authorization: "Basic " + auth }
+    })
+    const { access_token } = await tokenRes.json()
+
+    if (!access_token) {
+      alert("Auth failed — check keys")
+      return
+    }
+
+    const stkRes = await fetch("/mpesa/mpesa/stkpush/v1/processrequest", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + access_token,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        BusinessShortCode: SHORTCODE,
+        Password: password,
+        Timestamp: timestamp,
+        TransactionType: "CustomerPayBillOnline",
+        Amount: amount,
+        PartyA: finalPhone,
+        PartyB: SHORTCODE,
+        PhoneNumber: finalPhone,
+        CallBackURL: "https://webhook.site/f4b1b1ba-135a-4df2-af93-9000ddd94a71",
+        AccountReference: reference,
+        TransactionDesc: "Moshi Today Booking"
+      })
+    })
+
+    const result = await stkRes.json()
+    console.log("M-Pesa Result:", result)
+
+    if (result.ResponseCode === "0") {
+      alert("STK PUSH SENT! Check your phone!")
+    } else {
+      alert("Failed: " + (result.errorMessage || "Try again"))
+    }
+  } catch (err) {
+    console.error(err)
+    alert("No internet or server busy — try again")
+  }
+}
+
 function MainSite() {
   const [filter, setFilter] = useState('all')
   const [weather, setWeather] = useState(null)
   const [isDark, setIsDark] = useState(true)
   const [tours, setTours] = useState([])
+  const [showMpesa, setShowMpesa] = useState(false)
+  const [selectedTour, setSelectedTour] = useState(null)
+  const [phone, setPhone] = useState("")
 
   useEffect(() => {
     const saved = localStorage.getItem('moshi-theme')
@@ -72,12 +140,10 @@ function MainSite() {
   return (
     <div className={`min-h-screen ${bg} transition-all duration-500 relative`}>
       {/* TOGGLE */}
-      <button
-        onClick={toggleTheme}
+      <button onClick={toggleTheme}
         className={`fixed top-6 right-6 z-50 p-3 rounded-full backdrop-blur-xl shadow-2xl transition-all hover:scale-110 ${
           isDark ? 'bg-white/20 hover:bg-white/30 text-yellow-400' : 'bg-black/20 hover:bg-black/30 text-gray-800'
-        }`}
-      >
+        }`}>
         {isDark ? <SunIcon /> : <MoonIcon />}
       </button>
 
@@ -126,17 +192,18 @@ function MainSite() {
         </div>
       </div>
 
-      {/* TOURS GRID — MOBILE PERFECT */}
+      {/* URGENCY HEADING */}
+      <div className="px-4 py-10">
+        <div className="text-center">
+          <span className="inline-block px-10 py-4 bg-gradient-to-r from-yellow-500 to-orange-600 text-black font-black rounded-full text-xl md:text-2xl shadow-2xl animate-pulse">
+            Last-Minute Deals • Book Before They're Gone
+          </span>
+        </div>
+      </div>
+
+      {/* TOURS GRID */}
       <div className="px-4 pb-20">
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {/* TODAY ONLY CARD */}
-          <div className="group relative bg-gradient-to-br from-red-600 to-orange-600 rounded-2xl p-6 text-center shadow-xl hover:shadow-red-500/40 transition-all duration-400 hover:scale-105">
-            <div className="text-5xl mb-3 animate-pulse">flash</div>
-            <h3 className="text-xl font-black mb-1">TODAY ONLY</h3>
-            <p className="text-base font-bold">LAST-MINUTE SPOTS</p>
-          </div>
-
-          {/* REAL TOURS — MOBILE FRIENDLY */}
           {activeTours.length > 0 ? activeTours.map(tour => (
             <div key={tour.id} className={`group relative ${cardBg} backdrop-blur-xl rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border`}>
               <div className="text-3xl font-black mb-2">{tour.time}</div>
@@ -148,8 +215,14 @@ function MainSite() {
               <div className="text-2xl font-black bg-gradient-to-r from-amber-400 to-red-500 bg-clip-text text-transparent mb-3">
                 {tour.price}
               </div>
-              <button className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-black py-2.5 rounded-xl font-bold text-sm hover:shadow-cyan-500/50 transition">
-                Book Now
+              <button
+                onClick={() => {
+                  setSelectedTour(tour)
+                  setShowMpesa(true)
+                }}
+                className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-black py-2.5 rounded-xl font-bold text-sm hover:shadow-cyan-500/50 transition"
+              >
+                Pay with M-Pesa
               </button>
             </div>
           )) : (
@@ -160,10 +233,41 @@ function MainSite() {
         </div>
       </div>
 
-      {/* MORE WAYS — ALSO MOBILE PERFECT */}
+      {/* M-PESA POPUP */}
+      {showMpesa && selectedTour && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full">
+            <h3 className="text-2xl font-bold mb-4 text-center">{selectedTour.title}</h3>
+            <p className="text-3xl font-black text-emerald-600 text-center mb-6">{selectedTour.price}</p>
+
+            <input
+              type="tel"
+              placeholder="Phone (0712...)"
+              className="w-full p-4 border-2 border-gray-300 rounded-xl mb-6 text-black"
+              onChange={(e) => setPhone(e.target.value)}
+            />
+
+            <button
+              onClick={async () => {
+                await payWithMpesa(phone, 10, selectedTour.title)
+              }}
+              className="w-full bg-orange-600 text-white py-5 rounded-xl font-black text-xl hover:bg-orange-700 transition"
+            >
+              SEND M-PESA PUSH
+            </button>
+
+            <button
+              onClick={() => setShowMpesa(false)}
+              className="mt-4 text-gray-500 w-full text-center"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       <MoreWays />
 
-      {/* FOOTER */}
       <footer className={`px-6 py-20 text-center border-t transition-all duration-500 ${
         isDark ? 'bg-black text-white border-white/10' : 'bg-white text-black border-gray-200'
       }`}>
