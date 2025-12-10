@@ -1,36 +1,87 @@
-// src/components/MoreWays.jsx
+// src/components/MoreWays.jsx — FULL MONEY MODE + NEW HEADING
 export default function MoreWays() {
-    const services = [
-      { title: "Airport Transfer", desc: "Private car from JRO to Moshi", price: "from $25", icon: "plane" },
-      { title: "Sim Card + eSIM", desc: "4G data the second you land", price: "from $5", icon: "signal" },
-      { title: "Kili Climb Deals", desc: "Last-minute climb spots", price: "from $1,200", icon: "mountain" },
-      { title: "Restaurant Booking", desc: "Best dinner spots", price: "Free", icon: "utensils" },
-      { title: "1-Day Safari", desc: "See wildlife today", price: "from $180", icon: "binoculars" },
-    ]
-  
-    return (
-      <div className="px-4 py-20 bg-gradient-to-b from-transparent to-purple-900/20">
-        <h2 className="text-4xl md:text-5xl font-black text-center mb-12 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-          More Ways We Help You Today
-        </h2>
-        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {services.map((s, i) => (
-            <div key={i} className="group relative bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-3xl p-10 text-center border border-white/20 shadow-2xl hover:shadow-emerald-500/40 hover:border-emerald-400/60 transition-all duration-500 hover:-translate-y-2 hover:scale-105">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-              <div className="relative z-10">
-                <div className="text-7xl mb-6 group-hover:animate-bounce">{s.icon}</div>
-                <h3 className="text-2xl md:text-3xl font-black mb-4 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                  {s.title}
-                </h3>
-                <p className="text-base opacity-90 mb-6">{s.desc}</p>
-                <p className="text-3xl font-black text-emerald-400 mb-8">{s.price}</p>
-                <button className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-black px-10 py-4 rounded-full font-bold text-lg shadow-lg hover:shadow-cyan-500/50 transition transform hover:scale-110">
-                  Book Now
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+  const packages = [
+    {
+      title: "Marangu Route 6 Days",
+      price: "$1,450 pp",
+      desc: "Coca-Cola route • Dorm huts • Most popular",
+      icon: "mountain",
+    },
+    {
+      title: "Machame Route 7 Days",
+      price: "$1,650 pp",
+      desc: "Whiskey route • Best views • Highest success rate",
+      icon: "mountain",
+    },
+    {
+      title: "Rongai Route 7 Days",
+      price: "$1,700 pp",
+      desc: "Quiet & scenic • Northern side • Less crowded",
+      icon: "mountain",
+    },
+    {
+      title: "2 Days Safari",
+      price: "$450 pp",
+      desc: "Tarangire + Ngorongoro Crater • Budget killer",
+      icon: "binoculars",
+    },
+    {
+      title: "3 Days Safari",
+      price: "$600 pp",
+      desc: "Serengeti + Ngorongoro • See the Big 5",
+      icon: "binoculars",
+    },
+    {
+      title: "Airport Transfer",
+      price: "$35",
+      desc: "JRO → Moshi/Arusha • Private car",
+      icon: "plane",
+    },
+  ]
+
+  return (
+    <div className="px-4 py-20 bg-gradient-to-b from-transparent to-purple-900/20">
+      {/* NEW POWERFUL HEADING */}
+      <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-center mb-8 bg-gradient-to-r from-emerald-400 via-cyan-400 to-teal-500 bg-clip-text text-transparent drop-shadow-2xl">
+        Climb Kili • Safari Dreams • Book Today
+      </h2>
+
+      {/* LIMITED SPOTS BADGE */}
+      <div className="text-center mb-12">
+        <span className="inline-block px-8 py-3 bg-red-600 text-white font-black rounded-full text-lg animate-pulse shadow-2xl">
+          Limited Spots Available Today
+        </span>
       </div>
-    )
-  }
+
+      {/* PACKAGES GRID */}
+      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        {packages.map((p, i) => (
+          <div
+            key={i}
+            className="group relative bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-5 text-center border border-white/20 shadow-xl hover:shadow-emerald-500/40 hover:border-emerald-400/60 transition-all duration-500 hover:scale-105"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+            <div className="relative z-10">
+              <div className="text-6xl mb-3 group-hover:animate-bounce">{p.icon}</div>
+              <h3 className="text-lg font-black mb-2 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                {p.title}
+              </h3>
+              <p className="text-sm opacity-90 mb-3 leading-tight">{p.desc}</p>
+              <p className="text-3xl font-black text-emerald-400 mb-4">{p.price}</p>
+              <a
+                href={`https://wa.me/255747914720?text=I'm%20interested%20in%20${encodeURIComponent(
+                  p.title + " — " + p.price
+                )}%20Let's%20talk!`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-black py-3 rounded-xl font-bold text-sm hover:shadow-cyan-500/50 transition transform hover:scale-105"
+              >
+                Book via WhatsApp
+              </a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
