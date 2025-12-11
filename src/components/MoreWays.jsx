@@ -1,55 +1,76 @@
-// src/components/MoreWays.jsx — FINAL VERSION (ENGAGEMENT MAXED)
-export default function MoreWays() {
+// src/components/MoreWays.jsx — NOW ALIVE WITH POPUPS
+import { useState } from 'react'
+
+export default function MoreWays({ filter = 'all' }) {
+  const [popupItem, setPopupItem] = useState(null)
+
   const packages = [
-    { title: "Marangu Route 6 Days", price: "$1,450 pp", desc: "Coca-Cola route • Dorm huts • Most popular", icon: "mountain" },
-    { title: "Machame Route 7 Days", price: "$1,650 pp", desc: "Whiskey route • Best views • Highest success rate", icon: "mountain" },
-    { title: "Rongai Route 7 Days", price: "$1,700 pp", desc: "Quiet & scenic • Northern side • Less crowded", icon: "mountain" },
-    { title: "2 Days Safari", price: "$450 pp", desc: "Tarangire + Ngorongoro Crater • Budget killer", icon: "binoculars" },
-    { title: "3 Days Safari", price: "$600 pp", desc: "Serengeti + Ngorongoro • See the Big 5", icon: "binoculars" },
-    { title: "Airport Transfer", price: "$35", desc: "JRO → Moshi/Arusha • Private car", icon: "plane" },
+    { category: 'mountain', title: "Marangu Route 6 Days", price: "3,625,000 TSH pp", desc: "The easiest Kili route • Dorm huts • 6 days summit trek • Most popular for beginners", icon: "mountain" },
+    { category: 'mountain', title: "Machame Route 7 Days", price: "4,125,000 TSH pp", desc: "Whiskey route • Stunning views • 7 days • Higher success rate", icon: "mountain" },
+    { category: 'mountain', title: "Rongai Route 7 Days", price: "4,250,000 TSH pp", desc: "Quiet northern approach • Less crowded • 7 days • Scenic and peaceful", icon: "mountain" },
+    { category: 'safari', title: "2 Days Safari", price: "1,125,000 TSH pp", desc: "Tarangire + Ngorongoro Crater • Elephants & rhinos • Full day 1, half day 2", icon: "binoculars" },
+    { category: 'safari', title: "3 Days Safari", price: "1,500,000 TSH pp", desc: "Serengeti + Ngorongoro • Big 5 guaranteed • 3 full days of wildlife", icon: "binoculars" },
+    { category: 'transport', title: "Airport Transfer", price: "87,500 TSH", desc: "JRO Airport to Moshi/Arusha • Private car • 1-2 hours • AC vehicle", icon: "plane" },
+    { category: 'restaurants', title: "Union Cafe", price: "20,000 TSH avg", desc: "Best coffee in Moshi • Nyama choma • Local & international • Open 7AM-10PM", icon: "restaurant" },
+    { category: 'restaurants', title: "Kilimanjaro Wonders", price: "30,000 TSH avg", desc: "Hotel buffet • Tanzanian & continental • Family-friendly • 6AM-11PM", icon: "restaurant" },
+    { category: 'bars', title: "Pub Alberto", price: "5,000 TSH beer", desc: "Cold Kilimanjaro • Live football • Local crowd • Open 4PM-2AM", icon: "bar" },
+    { category: 'bars', title: "Glacier Inn", price: "6,000 TSH drink", desc: "Sports bar • Pool table • Happy hour • 3PM-1AM", icon: "bar" },
+    { category: 'nightclubs', title: "Redstone Club", price: "10,000 TSH entry", desc: "Bongo flava • VIP tables • Moshi's hottest spot • Fri-Sat 10PM-5AM", icon: "nightclub" },
+    { category: 'nightclubs', title: "Club 84", price: "15,000 TSH entry", desc: "Best sound system • International DJs • Dress code • Thu-Sun 9PM-4AM", icon: "nightclub" },
+    { category: 'pubs', title: "The Crown Pub", price: "8,000 TSH pint", desc: "Craft beer • Chill vibes • Karaoke nights • 3PM-12AM", icon: "pub" },
+    { category: 'pubs', title: "Moscow Pub", price: "7,000 TSH drink", desc: "Local hangout • Cheap drinks • Student favorite • 5PM-late", icon: "pub" },
   ]
+
+  const filtered = filter === 'all' ? packages : packages.filter(p => p.category === filter)
 
   return (
     <div className="px-4 py-20 bg-gradient-to-b from-transparent to-purple-900/20">
-      {/* PREMIUM HEADING */}
-      <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-center mb-8 bg-gradient-to-r from-emerald-400 via-cyan-400 to-teal-500 bg-clip-text text-transparent drop-shadow-2xl">
-        Climb Kili • Safari Dreams • Book Today
-      </h2>
-
-      {/* NEW ENGAGEMENT LINE — THIS ONE CONVERTS */}
-      <div className="text-center mb-12">
-        <span className="inline-block px-10 py-4 bg-gradient-to-r from-yellow-500 to-orange-600 text-black font-black rounded-full text-xl md:text-2xl shadow-2xl animate-pulse">
-          Your Adventure Starts Here — Book Now!
-        </span>
-      </div>
-
-      {/* PACKAGES GRID */}
-      <div className="max-w-7xl mx-auto grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-        {packages.map((p, i) => (
+      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {filtered.map((p, i) => (
           <div
             key={i}
-            className="group relative bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-5 text-center border border-white/20 shadow-xl hover:shadow-emerald-500/40 hover:border-emerald-400/60 transition-all duration-500 hover:scale-105"
+            onClick={() => setPopupItem({
+              title: p.title,
+              desc: p.desc,
+              price: p.price,
+              start: 'Varies by booking',
+              end: 'Varies by booking'
+            })}
+            className="group relative bg-white/5 backdrop-blur-xl rounded-3xl p-6 text-center border border-white/10 hover:border-emerald-400/60 hover:shadow-2xl hover:shadow-emerald-500/20 transition-all duration-500 hover:scale-105 cursor-pointer"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-            <div className="relative z-10">
-              <div className="text-6xl mb-3 group-hover:animate-bounce">{p.icon}</div>
-              <h3 className="text-lg font-black mb-2 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                {p.title}
-              </h3>
-              <p className="text-sm opacity-90 mb-3 leading-tight">{p.desc}</p>
-              <p className="text-3xl font-black text-emerald-400 mb-4">{p.price}</p>
-              <a
-                href={`https://wa.me/255747914720?text=I'm%20interested%20in%20${encodeURIComponent(p.title + " — " + p.price)}%20Let's%20talk!`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-black py-3 rounded-xl font-bold text-sm hover:shadow-cyan-500/50 transition transform hover:scale-105"
-              >
-                Book via WhatsApp
-              </a>
-            </div>
+            <div className="text-6xl mb-4 group-hover:animate-bounce">{p.icon}</div>
+            <h3 className="text-xl font-black mb-2 text-emerald-400">{p.title}</h3>
+            <p className="text-sm opacity-90 mb-3">{p.desc}</p>
+            <p className="text-2xl font-black text-yellow-400 mb-5">{p.price}</p>
           </div>
         ))}
       </div>
+
+      {/* POPUP */}
+      {popupItem && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setPopupItem(null)}>
+          <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 max-w-md w-full border border-emerald-500/30" onClick={e => e.stopPropagation()}>
+            <h3 className="text-3xl font-black text-center mb-4 text-emerald-400">{popupItem.title}</h3>
+            <p className="text-lg text-center mb-6 opacity-90">{popupItem.desc}</p>
+            <p className="text-center mb-8">
+              <span className="text-sm opacity-80">Starts: {popupItem.start}</span><br/>
+              <span className="text-sm opacity-80">Ends: {popupItem.end}</span>
+            </p>
+            <p className="text-4xl font-black text-center text-yellow-400 mb-8">{popupItem.price}</p>
+            <a
+              href={`https://wa.me/255747914720?text=Hi! I want to book: ${encodeURIComponent(popupItem.title + " — " + popupItem.price)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-center bg-gradient-to-r from-emerald-500 to-cyan-500 text-black py-5 rounded-2xl font-bold text-2xl hover:scale-110 transition"
+            >
+              BOOK NOW
+            </a>
+            <button onClick={() => setPopupItem(null)} className="mt-6 text-gray-500 w-full text-center">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

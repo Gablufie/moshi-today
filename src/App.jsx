@@ -6,93 +6,27 @@ import MoreWays from './components/MoreWays'
 import { db } from './firebase'
 import { collection, onSnapshot } from 'firebase/firestore'
 
-// SUN & MOON ICONS
+// SUN & MOON — BREATHE
 const SunIcon = () => (
-  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg className="w-8 h-8 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
       d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
   </svg>
 )
 
 const MoonIcon = () => (
-  <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+  <svg className="w-8 h-8 animate-pulse" fill="currentColor" viewBox="0 0 24 24">
     <path d="M21.64 13.36a10 10 0 01-13.28-13.28 10 10 0 1013.28 13.28z" />
   </svg>
 )
 
-// M-PESA STK PUSH — FINAL WORKING VERSION
-const payWithMpesa = async (phone, amount, reference) => {
-  const CONSUMER_KEY = "5hoWfchSxz3z7BCu0bd0xuWK5H6CRTOX"
-  const CONSUMER_SECRET = "5hoWfchSxz3z7BCu0bd0xuWK5H6CRTOX"
-  const SHORTCODE = "174379"
-  const PASSKEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
-
-  const cleanPhone = phone.replace(/\D/g, "")
-  const finalPhone = cleanPhone.startsWith("255") ? cleanPhone : "255" + cleanPhone.replace(/^0/, "")
-
-  if (finalPhone.length !== 12) {
-    alert("Wrong phone. Use 0712... or 255712...")
-    return
-  }
-
-  const timestamp = new Date().toISOString().replace(/[^0-9]/g, "").slice(0, 14)
-  const password = btoa(SHORTCODE + PASSKEY + timestamp)
-  const auth = btoa(CONSUMER_KEY + ":" + CONSUMER_SECRET)
-
-  try {
-    const tokenRes = await fetch("/mpesa/oauth/v1/generate?grant_type=client_credentials", {
-      headers: { Authorization: "Basic " + auth }
-    })
-    const { access_token } = await tokenRes.json()
-
-    if (!access_token) {
-      alert("Auth failed — check keys")
-      return
-    }
-
-    const stkRes = await fetch("/mpesa/mpesa/stkpush/v1/processrequest", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + access_token,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        BusinessShortCode: SHORTCODE,
-        Password: password,
-        Timestamp: timestamp,
-        TransactionType: "CustomerPayBillOnline",
-        Amount: amount,
-        PartyA: finalPhone,
-        PartyB: SHORTCODE,
-        PhoneNumber: finalPhone,
-        CallBackURL: "https://webhook.site/f4b1b1ba-135a-4df2-af93-9000ddd94a71",
-        AccountReference: reference,
-        TransactionDesc: "Moshi Today Booking"
-      })
-    })
-
-    const result = await stkRes.json()
-    console.log("M-Pesa Result:", result)
-
-    if (result.ResponseCode === "0") {
-      alert("STK PUSH SENT! Check your phone!")
-    } else {
-      alert("Failed: " + (result.errorMessage || "Try again"))
-    }
-  } catch (err) {
-    console.error(err)
-    alert("No internet or server busy — try again")
-  }
-}
-
 function MainSite() {
-  const [filter, setFilter] = useState('all')
+  const [globalFilter, setGlobalFilter] = useState('all')
   const [weather, setWeather] = useState(null)
   const [isDark, setIsDark] = useState(true)
   const [tours, setTours] = useState([])
-  const [showMpesa, setShowMpesa] = useState(false)
-  const [selectedTour, setSelectedTour] = useState(null)
-  const [phone, setPhone] = useState("")
+  const [popupItem, setPopupItem] = useState(null)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     const saved = localStorage.getItem('moshi-theme')
@@ -106,11 +40,10 @@ function MainSite() {
   }
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'tours'), (snapshot) => {
-      const tourData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      setTours(tourData)
+    const unsub = onSnapshot(collection(db, 'tours'), (snap) => {
+      setTours(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
     })
-    return unsub
+    return () => unsub()
   }, [])
 
   useEffect(() => {
@@ -123,163 +56,169 @@ function MainSite() {
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
   const activeTours = tours
-    .filter(tour => tour.active !== false)
-    .filter(tour => filter === 'all' || tour.category === filter)
-
-  const categories = [
-    { id: 'all', label: 'All' },
-    { id: 'adventure', label: 'Adventure' },
-    { id: 'water', label: 'Water' },
-    { id: 'culture', label: 'Culture' },
-    { id: 'food', label: 'Food' },
-  ]
-
-  const bg = isDark ? 'bg-black text-white' : 'bg-white text-black'
-  const cardBg = isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'
+    .filter(t => t.active !== false)
+    .filter(t => globalFilter === 'all' || t.category === globalFilter)
 
   return (
-    <div className={`min-h-screen ${bg} transition-all duration-500 relative`}>
-      {/* TOGGLE */}
-      <button onClick={toggleTheme}
-        className={`fixed top-6 right-6 z-50 p-3 rounded-full backdrop-blur-xl shadow-2xl transition-all hover:scale-110 ${
-          isDark ? 'bg-white/20 hover:bg-white/30 text-yellow-400' : 'bg-black/20 hover:bg-black/30 text-gray-800'
-        }`}>
+    <div className={`min-h-screen ${isDark ? 'bg-black text-white' : 'bg-white text-black'} transition-all duration-2000 relative overflow-x-hidden`}>
+      {/* FLOATING ORBS — BREATHING LIFE */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-10 left-10 w-96 h-96 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-40 right-10 w-80 h-80 bg-gradient-to-l from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute bottom-20 left-1/3 w-72 h-72 bg-gradient-to-t from-yellow-500/20 to-orange-500/20 rounded-full blur-3xl animate-pulse delay-500"></div>
+      </div>
+
+      {/* MENU BUTTON — FLOATING MAGIC */}
+      <button
+        onClick={() => setMenuOpen(!menuOpen)}
+        className={`fixed top-6 left-6 z-50 p-4 rounded-full backdrop-blur-2xl shadow-2xl transition-all duration-700 hover:scale-125 border ${isDark ? 'bg-white/20 border-white/30 text-cyan-300' : 'bg-black/20 border-black/30 text-purple-600'} hover:shadow-cyan-500/50`}
+      >
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      {/* THEME BUTTON */}
+      <button
+        onClick={toggleTheme}
+        className={`fixed top-6 right-6 z-50 p-4 rounded-full backdrop-blur-2xl shadow-2xl transition-all duration-700 hover:scale-125 border ${isDark ? 'bg-white/20 border-white/30 text-yellow-300' : 'bg-black/20 border-black/30 text-gray-700'} hover:shadow-yellow-500/50`}
+      >
         {isDark ? <SunIcon /> : <MoonIcon />}
       </button>
 
-      {/* HERO */}
-      <div className="px-4 pt-8 pb-12">
-        <div className="max-w-4xl mx-auto rounded-3xl bg-gradient-to-br from-purple-600 to-blue-600 p-10 md:p-14 text-center shadow-2xl">
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-black mb-4">MOSHI TODAY</h1>
-          <p className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
-            What can you do <span className="text-yellow-300">right now</span>?
-          </p>
-          <p className="text-sm md:text-base opacity-90 mb-6">Updated {today}</p>
-
-          {weather !== null && (
-            <div className="mt-8">
-              <div className="text-8xl md:text-9xl font-black text-yellow-400">{weather}°C</div>
-              <p className="text-lg md:text-xl mt-4 font-medium">
-                {weather > 32 ? 'Hot → go swimming!' : weather < 18 ? 'Cool → perfect for hiking!' : 'Great weather for anything!'}
-              </p>
-            </div>
-          )}
-
-          <div className="mt-10 text-5xl md:text-6xl font-black text-emerald-400">
-            {activeTours.reduce((a, b) => a + (b.seats || 0), 0)} seats left today
-          </div>
-        </div>
-      </div>
-
-      {/* FILTERS */}
-      <div className="px-4 pb-10">
-        <div className="max-w-2xl mx-auto">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-            {categories.map(cat => (
+      {/* SLIDING MENU — SMALL CATEGORIES, SCROLLABLE, GLOWING */}
+      <div className={`fixed inset-y-0 left-0 h-full w-72 z-40 transform transition-transform duration-700 ${menuOpen ? 'translate-x-0' : '-translate-x-full'} ${isDark ? 'bg-black/95' : 'bg-white/95'} backdrop-blur-3xl shadow-2xl overflow-y-auto`}>
+        <div className="p-6 pt-28">
+          <h2 className="text-2xl font-black text-center mb-10 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+            Choose Your Vibe
+          </h2>
+          <div className="space-y-3">
+            {[
+              { id: 'all', name: "Everything" },
+              { id: 'adventure', name: "Adventure" },
+              { id: 'water', name: "Waterfalls" },
+              { id: 'culture', name: "Culture" },
+              { id: 'food', name: "Food Tours" },
+              { id: 'mountain', name: "Mountain" },
+              { id: 'safari', name: "Safari" },
+              { id: 'restaurants', name: "Restaurants" },
+              { id: 'bars', name: "Bars" },
+              { id: 'nightclubs', name: "Night Clubs" },
+              { id: 'pubs', name: "Pubs & Chill" },
+              { id: 'transport', name: "Transport" },
+            ].map(item => (
               <button
-                key={cat.id}
-                onClick={() => setFilter(cat.id)}
-                className={`py-3.5 rounded-xl font-bold text-sm transition-all ${
-                  filter === cat.id
-                    ? 'bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg scale-105 ring-2 ring-white/30'
-                    : isDark ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-100 hover:bg-gray-200'
+                key={item.id}
+                onClick={() => {
+                  setGlobalFilter(item.id)
+                  setMenuOpen(false)
+                }}
+                className={`w-full py-3 text-base font-bold rounded-xl transition-all duration-500 ${
+                  globalFilter === item.id
+                    ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-black shadow-lg shadow-cyan-500/50'
+                    : isDark ? 'bg-white/10 hover:bg-white/15 text-white/70' : 'bg-black/10 hover:bg-black/15 text-black/70'
                 }`}
               >
-                {cat.label}
+                {item.name}
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* URGENCY HEADING */}
-      <div className="px-4 py-10">
-        <div className="text-center">
-          <span className="inline-block px-10 py-4 bg-gradient-to-r from-yellow-500 to-orange-600 text-black font-black rounded-full text-xl md:text-2xl shadow-2xl animate-pulse">
-            Last-Minute Deals • Book Before They're Gone
-          </span>
-        </div>
+      {menuOpen && <div className="fixed inset-0 bg-black/60 z-30" onClick={() => setMenuOpen(false)} />}
+
+      {/* HERO — CINEMATIC */}
+      <div className="relative px-6 pt-32 pb-24 text-center">
+        <h1 className="text-7xl sm:text-8xl md:text-9xl font-black mb-6 bg-gradient-to-r from-emerald-300 via-cyan-300 to-purple-300 bg-clip-text text-transparent drop-shadow-2xl animate-pulse">
+          MOSHI TODAY
+        </h1>
+        <p className="text-3xl font-bold mb-6">What can you do right now?</p>
+        <p className="text-xl opacity-80 mb-10">Updated {today}</p>
+        {weather && <p className="text-10xl font-black text-yellow-400 animate-bounce drop-shadow-2xl">{weather}°C</p>}
       </div>
 
-      {/* TOURS GRID */}
-      <div className="px-4 pb-20">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {activeTours.length > 0 ? activeTours.map(tour => (
-            <div key={tour.id} className={`group relative ${cardBg} backdrop-blur-xl rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border`}>
-              <div className="text-3xl font-black mb-2">{tour.time}</div>
-              <div className="bg-red-600 text-white inline-block px-3 py-1 rounded-full text-xs font-bold mb-3">
+      {/* TODAY'S TRIPS */}
+      <div className="px-6 pb-16">
+        <h2 className="text-5xl font-black text-center mb-12 bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent drop-shadow-2xl">
+          TODAY'S TRIPS
+        </h2>
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          {activeTours.map(tour => (
+            <div
+              key={tour.id}
+              onClick={() => setPopupItem({ ...tour, start: tour.time, end: 'Around 6PM', desc: tour.desc || 'Unforgettable adventure' })}
+              className="group relative bg-white/8 backdrop-blur-2xl rounded-3xl p-8 border border-white/10 hover:scale-108 hover:shadow-2xl hover:shadow-emerald-500/30 transition-all duration-700 cursor-pointer"
+            >
+              <div className="text-4xl font-black text-emerald-400 mb-4">{tour.time}</div>
+              <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-5 py-2 rounded-full text-sm font-bold mb-5 inline-block">
                 {tour.seats} seats left
               </div>
-              <h3 className="text-base font-bold mb-2 line-clamp-2 leading-tight">{tour.title}</h3>
-              <p className="text-xs opacity-80 mb-3">Guide: {tour.guide}</p>
-              <div className="text-2xl font-black bg-gradient-to-r from-amber-400 to-red-500 bg-clip-text text-transparent mb-3">
+              <h3 className="text-2xl font-black mb-4">{tour.title}</h3>
+              <p className="text-sm opacity-80 mb-5">Guide: {tour.guide}</p>
+              <p className="text-4xl font-black bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
                 {tour.price}
-              </div>
-              <button
-                onClick={() => {
-                  setSelectedTour(tour)
-                  setShowMpesa(true)
-                }}
-                className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-black py-2.5 rounded-xl font-bold text-sm hover:shadow-cyan-500/50 transition"
-              >
-                Pay with M-Pesa
-              </button>
+              </p>
             </div>
-          )) : (
-            <div className="col-span-full text-center py-20 text-xl opacity-50">
-              No tours available right now
-            </div>
-          )}
+          ))}
         </div>
       </div>
 
-      {/* M-PESA POPUP */}
-      {showMpesa && selectedTour && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full">
-            <h3 className="text-2xl font-bold mb-4 text-center">{selectedTour.title}</h3>
-            <p className="text-3xl font-black text-emerald-600 text-center mb-6">{selectedTour.price}</p>
+      {/* MORE ACTIVITIES */}
+      <div className="px-6 py-24">
+        <h2 className="text-5xl font-black text-center mb-16 bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent drop-shadow-2xl">
+          MORE IN MOSHI
+        </h2>
+        <MoreWays filter={globalFilter} />
+      </div>
 
-            <input
-              type="tel"
-              placeholder="Phone (0712...)"
-              className="w-full p-4 border-2 border-gray-300 rounded-xl mb-6 text-black"
-              onChange={(e) => setPhone(e.target.value)}
-            />
-
-            <button
-              onClick={async () => {
-                await payWithMpesa(phone, 10, selectedTour.title)
-              }}
-              className="w-full bg-orange-600 text-white py-5 rounded-xl font-black text-xl hover:bg-orange-700 transition"
+      {/* POPUP */}
+      {popupItem && (
+        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-6" onClick={() => setPopupItem(null)}>
+          <div className="bg-gradient-to-br from-gray-900 to-black rounded-3xl p-10 max-w-lg w-full border-2 border-emerald-500/50 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-4xl font-black text-center mb-6 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+              {popupItem.title}
+            </h3>
+            <p className="text-xl text-center mb-8 opacity-90">{popupItem.desc}</p>
+            <div className="text-center space-y-3 mb-10">
+              <p>Starts: <span className="font-bold text-emerald-400">{popupItem.start}</span></p>
+              <p>Ends: <span className="font-bold text-emerald-400">{popupItem.end}</span></p>
+            </div>
+            <p className="text-5xl font-black text-center text-yellow-400 mb-10">{popupItem.price}</p>
+            <a
+              href={`https://wa.me/255747914720?text=BOOKING: ${encodeURIComponent(popupItem.title + " — " + popupItem.price)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-center bg-gradient-to-r from-emerald-500 to-cyan-500 text-black py-6 rounded-3xl font-black text-3xl hover:scale-110 transition-all duration-500 shadow-2xl"
             >
-              SEND M-PESA PUSH
-            </button>
-
-            <button
-              onClick={() => setShowMpesa(false)}
-              className="mt-4 text-gray-500 w-full text-center"
-            >
-              Cancel
+              BOOK NOW
+            </a>
+            <button onClick={() => setPopupItem(null)} className="mt-8 text-gray-400 text-center w-full text-lg">
+              Close
             </button>
           </div>
         </div>
       )}
 
-      <MoreWays />
-
-      <footer className={`px-6 py-20 text-center border-t transition-all duration-500 ${
-        isDark ? 'bg-black text-white border-white/10' : 'bg-white text-black border-gray-200'
-      }`}>
-        <p className="text-6xl md:text-7xl font-black mb-8">+255 747 914 720</p>
-        <p className="text-xl md:text-2xl max-w-xl mx-auto">
-          Want to list your tour? →{' '}
-          <a href="https://wa.me/255747914720" className={`font-bold underline transition-all hover:scale-105 ${
-            isDark ? 'text-emerald-400 hover:text-cyan-300' : 'text-emerald-600 hover:text-emerald-800'
-          }`}>
-            Message us on WhatsApp
+      {/* FOOTER — PORTAL ENERGY */}
+      <footer className="relative px-6 py-32 text-center overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/60 to-transparent"></div>
+        <div className="absolute inset-0">
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-96 h-96 bg-gradient-to-r from-emerald-500 via-cyan-500 to-purple-600 rounded-full blur-3xl animate-pulse opacity-30"></div>
+        </div>
+        <div className="relative z-10">
+          <p className="text-6xl sm:text-7xl md:text-8xl font-black mb-6 bg-gradient-to-r from-emerald-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent drop-shadow-2xl animate-pulse">
+            +255 747 914 720
+          </p>
+          <p className="text-xl mb-10 opacity-80">24/7 — WhatsApp & Call</p>
+          <a
+            href="https://wa.me/255747914720"
+            className="inline-block px-16 py-6 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-black text-2xl rounded-full hover:scale-110 transition-all duration-500 shadow-2xl"
+          >
+            ADD YOUR BUSINESS
           </a>
-        </p>
+          <p className="mt-16 text-sm opacity-50">Made with love for Moshi • © 2025</p>
+        </div>
       </footer>
     </div>
   )
