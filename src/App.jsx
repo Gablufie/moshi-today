@@ -2,31 +2,33 @@ import { useState, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import GuideLogin from './pages/GuideLogin'
 import GuideDashboard from './pages/GuideDashboard'
-import MoreWays from './components/MoreWays'
 import { db } from './firebase'
 import { collection, onSnapshot } from 'firebase/firestore'
 
-// SUN & MOON — BREATHE
+// SUN & MOON
 const SunIcon = () => (
-  <svg className="w-8 h-8 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+  <svg className="w-6 h-6 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="5" />
+    {[...Array(8)].map((_, i) => (
+      <line key={i} x1="12" y1="1" x2="12" y2="3" transform={`rotate(${i * 45} 12 12)`} />
+    ))}
   </svg>
 )
 
 const MoonIcon = () => (
-  <svg className="w-8 h-8 animate-pulse" fill="currentColor" viewBox="0 0 24 24">
-    <path d="M21.64 13.36a10 10 0 01-13.28-13.28 10 10 0 1013.28 13.28z" />
+  <svg className="w-6 h-6 animate-pulse" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
   </svg>
 )
 
 function MainSite() {
-  const [globalFilter, setGlobalFilter] = useState('all')
   const [weather, setWeather] = useState(null)
   const [isDark, setIsDark] = useState(true)
   const [tours, setTours] = useState([])
+  const [activities, setActivities] = useState([])
   const [popupItem, setPopupItem] = useState(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState('all')
 
   useEffect(() => {
     const saved = localStorage.getItem('moshi-theme')
@@ -40,10 +42,14 @@ function MainSite() {
   }
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'tours'), (snap) => {
-      setTours(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+    const unsubTours = onSnapshot(collection(db, 'tours'), (snap) => {
+      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(t => t.active !== false)
+      setTours(data)
     })
-    return () => unsub()
+    const unsubActs = onSnapshot(collection(db, 'activities'), (snap) => {
+      setActivities(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+    })
+    return () => { unsubTours(); unsubActs() }
   }, [])
 
   useEffect(() => {
@@ -53,173 +59,167 @@ function MainSite() {
       .catch(() => setWeather(28))
   }, [])
 
-  const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
 
-  const activeTours = tours
-    .filter(t => t.active !== false)
-    .filter(t => globalFilter === 'all' || t.category === globalFilter)
+  const filteredActivities = selectedCategory === 'all'
+    ? activities
+    : activities.filter(a => a.category === selectedCategory)
+
+  const categories = [
+    { id: 'all', name: 'Everything' },
+    { id: 'mountain', name: 'Mountain' },
+    { id: 'safari', name: 'Safari' },
+    { id: 'waterfalls', name: 'Waterfalls' },
+    { id: 'culture', name: 'Culture' },
+    { id: 'food', name: 'Food' },
+    { id: 'restaurants', name: 'Restaurants' },
+    { id: 'bars', name: 'Bars' },
+    { id: 'transport', name: 'Transport' },
+    { id: 'experiences', name: 'Experiences' },
+  ]
+
+  const Card = ({ item }) => (
+    <div onClick={() => setPopupItem(item)}
+      className="group relative rounded-3xl p-8 text-center cursor-pointer bg-white/10 backdrop-blur-2xl border border-white/20
+                 hover:scale-105 hover:border-emerald-500/50 hover:shadow-2xl hover:shadow-emerald-500/30 transition-all duration-700 overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-cyan-500/0 group-hover:from-emerald-500/20 group-hover:to-cyan-500/20 transition-all duration-1000"/>
+      <div className="relative z-10">
+        <div className="text-6xl mb-4">{item.icon || 'Star'}</div>
+        {item.trending && (
+          <div className="absolute top-4 right-4 bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs px-3 py-1 rounded-full font-bold animate-pulse">
+            HOT
+          </div>
+        )}
+        <h3 className="text-xl font-black mb-3 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+          {item.title}
+        </h3>
+        <p className="text-sm opacity-80 mb-4 min-h-12">{item.desc}</p>
+        <p className="text-2xl font-black text-yellow-400">{item.price}</p>
+      </div>
+    </div>
+  )
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-black text-white' : 'bg-white text-black'} transition-all duration-2000 relative overflow-x-hidden`}>
-      {/* FLOATING ORBS — BREATHING LIFE */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-10 left-10 w-96 h-96 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-40 right-10 w-80 h-80 bg-gradient-to-l from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute bottom-20 left-1/3 w-72 h-72 bg-gradient-to-t from-yellow-500/20 to-orange-500/20 rounded-full blur-3xl animate-pulse delay-500"></div>
+    <div className={`min-h-screen relative overflow-hidden transition-colors duration-1000 ${isDark ? 'bg-black text-white' : 'bg-gray-50 text-black'}`}>
+      {/* ORBS */}
+      <div className="fixed inset-0 pointer-events-none -z-10">
+        <div className="absolute top-10 left-10 w-96 h-96 bg-emerald-500/30 rounded-full blur-3xl animate-pulse"/>
+        <div className="absolute bottom-20 right-10 w-80 h-80 bg-purple-500/30 rounded-full blur-3xl animate-pulse animation-delay-2000"/>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl animate-pulse animation-delay-4000"/>
       </div>
 
-      {/* MENU BUTTON — FLOATING MAGIC */}
+      {/* MENU ICON ONLY */}
       <button
         onClick={() => setMenuOpen(!menuOpen)}
-        className={`fixed top-6 left-6 z-50 p-4 rounded-full backdrop-blur-2xl shadow-2xl transition-all duration-700 hover:scale-125 border ${isDark ? 'bg-white/20 border-white/30 text-cyan-300' : 'bg-black/20 border-black/30 text-purple-600'} hover:shadow-cyan-500/50`}
+        className="fixed top-6 left-6 z-50 p-4 rounded-full bg-white/20 backdrop-blur-2xl border border-white/30 hover:scale-110 transition-all duration-500 shadow-2xl"
       >
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 6h16M4 12h16M4 18h16" />
+        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={menuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
         </svg>
       </button>
 
-      {/* THEME BUTTON */}
+      {/* THEME */}
       <button
         onClick={toggleTheme}
-        className={`fixed top-6 right-6 z-50 p-4 rounded-full backdrop-blur-2xl shadow-2xl transition-all duration-700 hover:scale-125 border ${isDark ? 'bg-white/20 border-white/30 text-yellow-300' : 'bg-black/20 border-black/30 text-gray-700'} hover:shadow-yellow-500/50`}
+        className="fixed top-6 right-6 z-50 p-4 rounded-full bg-white/20 backdrop-blur-2xl border border-white/30 hover:scale-110 transition-all duration-500 shadow-2xl"
       >
         {isDark ? <SunIcon /> : <MoonIcon />}
       </button>
 
-      {/* SLIDING MENU — SMALL CATEGORIES, SCROLLABLE, GLOWING */}
-      <div className={`fixed inset-y-0 left-0 h-full w-72 z-40 transform transition-transform duration-700 ${menuOpen ? 'translate-x-0' : '-translate-x-full'} ${isDark ? 'bg-black/95' : 'bg-white/95'} backdrop-blur-3xl shadow-2xl overflow-y-auto`}>
-        <div className="p-6 pt-28">
-          <h2 className="text-2xl font-black text-center mb-10 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-            Choose Your Vibe
+      {/* SLIDING MENU */}
+      <div className={`fixed top-0 left-0 h-full w-80 z-40 transform transition-transform duration-700 ${menuOpen ? 'translate-x-0' : '-translate-x-full'} bg-black/80 backdrop-blur-3xl border-r border-white/20`}>
+        <div className="p-10 pt-32">
+          <h2 className="text-3xl font-black mb-10 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+            Vibe
           </h2>
           <div className="space-y-3">
-            {[
-              { id: 'all', name: "Everything" },
-              { id: 'adventure', name: "Adventure" },
-              { id: 'water', name: "Waterfalls" },
-              { id: 'culture', name: "Culture" },
-              { id: 'food', name: "Food Tours" },
-              { id: 'mountain', name: "Mountain" },
-              { id: 'safari', name: "Safari" },
-              { id: 'restaurants', name: "Restaurants" },
-              { id: 'bars', name: "Bars" },
-              { id: 'nightclubs', name: "Night Clubs" },
-              { id: 'pubs', name: "Pubs & Chill" },
-              { id: 'transport', name: "Transport" },
-            ].map(item => (
+            {categories.map(cat => (
               <button
-                key={item.id}
-                onClick={() => {
-                  setGlobalFilter(item.id)
-                  setMenuOpen(false)
-                }}
-                className={`w-full py-3 text-base font-bold rounded-xl transition-all duration-500 ${
-                  globalFilter === item.id
+                key={cat.id}
+                onClick={() => { setSelectedCategory(cat.id); setMenuOpen(false) }}
+                className={`w-full text-left py-4 px-6 rounded-2xl font-bold text-lg transition-all duration-500
+                  ${selectedCategory === cat.id
                     ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-black shadow-lg shadow-cyan-500/50'
-                    : isDark ? 'bg-white/10 hover:bg-white/15 text-white/70' : 'bg-black/10 hover:bg-black/15 text-black/70'
-                }`}
+                    : 'hover:bg-white/10 text-white/70'}`}
               >
-                {item.name}
+                {cat.name}
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {menuOpen && <div className="fixed inset-0 bg-black/60 z-30" onClick={() => setMenuOpen(false)} />}
-
-      {/* HERO — CINEMATIC */}
-      <div className="relative px-6 pt-32 pb-24 text-center">
-        <h1 className="text-7xl sm:text-8xl md:text-9xl font-black mb-6 bg-gradient-to-r from-emerald-300 via-cyan-300 to-purple-300 bg-clip-text text-transparent drop-shadow-2xl animate-pulse">
+      {/* HERO — NO LINES, PURE TEXT */}
+      <header className="pt-32 pb-20 text-center px-6">
+        <h1 className="text-7xl sm:text-9xl font-black bg-gradient-to-r from-emerald-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent animate-pulse leading-tight">
           MOSHI TODAY
         </h1>
-        <p className="text-3xl font-bold mb-6">What can you do right now?</p>
-        <p className="text-xl opacity-80 mb-10">Updated {today}</p>
-        {weather && <p className="text-10xl font-black text-yellow-400 animate-bounce drop-shadow-2xl">{weather}°C</p>}
-      </div>
+        <p className="text-2xl mt-6 opacity-80">What can you do right now?</p>
+        <p className="text-lg mt-3 opacity-60">Updated {today}</p>
+
+        {/* TEMPERATURE — NO BORDER, NO PILL */}
+        {weather && (
+          <div className="mt-10">
+            <span className="text-4xl font-bold text-yellow-400 animate-pulse">
+              {weather}°C
+            </span>
+            <span className="ml-3 text-lg opacity-70">in Moshi</span>
+          </div>
+        )}
+      </header>
 
       {/* TODAY'S TRIPS */}
-      <div className="px-6 pb-16">
-        <h2 className="text-5xl font-black text-center mb-12 bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent drop-shadow-2xl">
-          TODAY'S TRIPS
+      {tours.length > 0 && (
+        <section className="px-6 pb-20">
+          <h2 className="text-5xl font-black text-center mb-12 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+            TODAY'S TRIPS
+          </h2>
+          <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {tours.map(tour => (
+              <div key={tour.id} onClick={() => setPopupItem({ ...tour, start: tour.time })}
+                className="group relative bg-white/10 backdrop-blur-2xl rounded-3xl p-8 border border-white/20 hover:scale-105 hover:border-emerald-500/50 hover:shadow-2xl hover:shadow-emerald-500/40 transition-all duration-700 cursor-pointer">
+                <div className="text-4xl font-black text-emerald-400 mb-2">{tour.time}</div>
+                <div className="bg-gradient-to-r from-orange-500 to-red-600 text-white text-sm px-4 py-2 rounded-full font-bold mb-4 inline-block animate-pulse">
+                  {tour.seats} seats left
+                </div>
+                <h3 className="text-2xl font-black mb-3">{tour.title}</h3>
+                <p className="opacity-70 text-sm">Guide: {tour.guide}</p>
+                <p className="text-3xl font-bold mt-4 text-yellow-400">{tour.price}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ACTIVITIES */}
+      <section className="px-6 py-20">
+        <h2 className="text-5xl font-black text-center mb-12 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+          {selectedCategory === 'all' ? 'EVERYTHING' : selectedCategory.toUpperCase()}
         </h2>
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {activeTours.map(tour => (
-            <div
-              key={tour.id}
-              onClick={() => setPopupItem({ ...tour, start: tour.time, end: 'Around 6PM', desc: tour.desc || 'Unforgettable adventure' })}
-              className="group relative bg-white/8 backdrop-blur-2xl rounded-3xl p-8 border border-white/10 hover:scale-108 hover:shadow-2xl hover:shadow-emerald-500/30 transition-all duration-700 cursor-pointer"
-            >
-              <div className="text-4xl font-black text-emerald-400 mb-4">{tour.time}</div>
-              <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-5 py-2 rounded-full text-sm font-bold mb-5 inline-block">
-                {tour.seats} seats left
-              </div>
-              <h3 className="text-2xl font-black mb-4">{tour.title}</h3>
-              <p className="text-sm opacity-80 mb-5">Guide: {tour.guide}</p>
-              <p className="text-4xl font-black bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-                {tour.price}
-              </p>
-            </div>
-          ))}
+          {filteredActivities.map(item => <Card key={item.id} item={item} />)}
         </div>
-      </div>
-
-      {/* MORE ACTIVITIES */}
-      <div className="px-6 py-24">
-        <h2 className="text-5xl font-black text-center mb-16 bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent drop-shadow-2xl">
-          MORE IN MOSHI
-        </h2>
-        <MoreWays filter={globalFilter} />
-      </div>
+      </section>
 
       {/* POPUP */}
       {popupItem && (
-        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-6" onClick={() => setPopupItem(null)}>
-          <div className="bg-gradient-to-br from-gray-900 to-black rounded-3xl p-10 max-w-lg w-full border-2 border-emerald-500/50 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/70 backdrop-blur-xl" onClick={() => setPopupItem(null)}>
+          <div onClick={e => e.stopPropagation()}
+            className="relative max-w-md w-full bg-gradient-to-br from-black/90 via-purple-900/50 to-black/90 backdrop-blur-3xl rounded-3xl p-10 border-2 border-emerald-500/50 shadow-2xl">
+            <button onClick={() => setPopupItem(null)} className="absolute top-4 right-6 text-4xl opacity-70 hover:opacity-100">×</button>
             <h3 className="text-4xl font-black text-center mb-6 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
               {popupItem.title}
             </h3>
-            <p className="text-xl text-center mb-8 opacity-90">{popupItem.desc}</p>
-            <div className="text-center space-y-3 mb-10">
-              <p>Starts: <span className="font-bold text-emerald-400">{popupItem.start}</span></p>
-              <p>Ends: <span className="font-bold text-emerald-400">{popupItem.end}</span></p>
-            </div>
-            <p className="text-5xl font-black text-center text-yellow-400 mb-10">{popupItem.price}</p>
-            <a
-              href={`https://wa.me/255747914720?text=BOOKING: ${encodeURIComponent(popupItem.title + " — " + popupItem.price)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block text-center bg-gradient-to-r from-emerald-500 to-cyan-500 text-black py-6 rounded-3xl font-black text-3xl hover:scale-110 transition-all duration-500 shadow-2xl"
-            >
+            <p className="text-center text-lg mb-8 opacity-90">{popupItem.desc || 'Unforgettable experience in Moshi'}</p>
+            <p className="text-6xl font-black text-center text-yellow-400 mb-10">{popupItem.price}</p>
+            <a href={`https://wa.me/255747914720?text=${encodeURIComponent(`Hi! I'd like to book: ${popupItem.title} — ${popupItem.price}`)}`}
+              target="_blank" rel="noopener noreferrer"
+              className="block text-center py-6 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black text-2xl font-black rounded-3xl hover:scale-105 transition-all duration-500 shadow-2xl">
               BOOK NOW
             </a>
-            <button onClick={() => setPopupItem(null)} className="mt-8 text-gray-400 text-center w-full text-lg">
-              Close
-            </button>
           </div>
         </div>
       )}
-
-      {/* FOOTER — PORTAL ENERGY */}
-      <footer className="relative px-6 py-32 text-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/60 to-transparent"></div>
-        <div className="absolute inset-0">
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-96 h-96 bg-gradient-to-r from-emerald-500 via-cyan-500 to-purple-600 rounded-full blur-3xl animate-pulse opacity-30"></div>
-        </div>
-        <div className="relative z-10">
-          <p className="text-6xl sm:text-7xl md:text-8xl font-black mb-6 bg-gradient-to-r from-emerald-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent drop-shadow-2xl animate-pulse">
-            +255 747 914 720
-          </p>
-          <p className="text-xl mb-10 opacity-80">24/7 — WhatsApp & Call</p>
-          <a
-            href="https://wa.me/255747914720"
-            className="inline-block px-16 py-6 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-black text-2xl rounded-full hover:scale-110 transition-all duration-500 shadow-2xl"
-          >
-            ADD YOUR BUSINESS
-          </a>
-          <p className="mt-16 text-sm opacity-50">Made with love for Moshi • © 2025</p>
-        </div>
-      </footer>
     </div>
   )
 }
