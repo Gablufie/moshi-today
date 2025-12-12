@@ -32,7 +32,6 @@ function MainSite() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('all')
 
-  // Theme persistence
   useEffect(() => {
     const saved = localStorage.getItem('moshi-theme')
     if (saved === 'light') setIsDark(false)
@@ -44,24 +43,18 @@ function MainSite() {
     localStorage.setItem('moshi-theme', newMode ? 'dark' : 'light')
   }
 
-  // Firebase data
   useEffect(() => {
     const unsubTours = onSnapshot(collection(db, 'tours'), (snap) => {
-      const data = snap.docs
-        .map(d => ({ id: d.id, type: 'tour', ...d.data() }))
-        .filter(t => t.active !== false)
+      const data = snap.docs.map(d => ({ id: d.id, type: 'tour', ...d.data() })).filter(t => t.active !== false)
       setTours(data)
     })
-
     const unsubActs = onSnapshot(collection(db, 'activities'), (snap) => {
       const data = snap.docs.map(d => ({ id: d.id, type: 'activity', ...d.data() }))
       setActivities(data)
     })
-
     return () => { unsubTours(); unsubActs() }
   }, [])
 
-  // Combine + trending logic
   useEffect(() => {
     const combined = [...tours, ...activities].map(item => ({
       ...item,
@@ -69,14 +62,12 @@ function MainSite() {
       clicksThisWeek: item.clicksThisWeek || 0
     }))
     setAllItems(combined)
-
     const trending = [...combined]
       .sort((a, b) => (b.clicksThisWeek || 0) - (a.clicksThisWeek || 0))
       .slice(0, 6)
     setTrendingItems(trending)
   }, [tours, activities])
 
-  // Weather
   useEffect(() => {
     fetch('https://api.open-meteo.com/v1/forecast?latitude=-3.35&longitude=37.33&current=temperature_2m&timezone=Africa/Dar_es_Salaam')
       .then(r => r.json())
@@ -88,13 +79,8 @@ function MainSite() {
     setPopupItem(item)
     try {
       const ref = doc(db, item.type === 'tour' ? 'tours' : 'activities', item.id)
-      await updateDoc(ref, {
-        clicksThisWeek: increment(1),
-        lastClicked: serverTimestamp()
-      })
-    } catch (err) {
-      console.log("Click tracking failed", err)
-    }
+      await updateDoc(ref, { clicksThisWeek: increment(1), lastClicked: serverTimestamp() })
+    } catch (err) { console.log("Click tracking offline") }
   }
 
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -126,16 +112,14 @@ function MainSite() {
       </div>
 
       {/* MENU + THEME */}
-      <button onClick={() => setMenuOpen(!menuOpen)}
-        className="fixed top-6 left-6 z-50 p-4 rounded-full bg-white/20 backdrop-blur-2xl border border-white/30 hover:scale-110 transition-all shadow-2xl">
+      <button onClick={() => setMenuOpen(!menuOpen)} className="fixed top-6 left-6 z-50 p-4 rounded-full bg-white/20 backdrop-blur-2xl border border-white/30 hover:scale-110 transition-all shadow-2xl">
         <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
             d={menuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
         </svg>
       </button>
 
-      <button onClick={toggleTheme}
-        className="fixed top-6 right-6 z-50 p-4 rounded-full bg-white/20 backdrop-blur-2xl border border-white/30 hover:scale-110 transition-all shadow-2xl">
+      <button onClick={toggleTheme} className="fixed top-6 right-6 z-50 p-4 rounded-full bg-white/20 backdrop-blur-2xl border border-white/30 hover:scale-110 transition-all shadow-2xl">
         {isDark ? <SunIcon /> : <MoonIcon />}
       </button>
 
@@ -164,12 +148,7 @@ function MainSite() {
         </h1>
         <p className="text-2xl mt-6 opacity-80">What can you do right now?</p>
         <p className="text-lg mt-3 opacity-60">Updated {today}</p>
-        {weather && (
-          <div className="mt-10">
-            <span className="text-4xl font-bold text-yellow-400 animate-pulse">{weather}°C</span>
-            <span className="ml-3 text-lg opacity-70">in Moshi</span>
-          </div>
-        )}
+        {weather && <div className="mt-10"><span className="text-4xl font-bold text-yellow-400 animate-pulse">{weather}°C</span><span className="ml-3 text-lg opacity-70">in Moshi</span></div>}
       </header>
 
       {/* MOST VISITED THIS WEEK */}
@@ -179,24 +158,18 @@ function MainSite() {
             MOST VISITED THIS WEEK
           </h2>
           <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {trendingItems.map((item, index) => (
+            {trendingItems.map((item, i) => (
               <div key={item.id} onClick={() => handleItemClick(item)}
                 className="group relative bg-white/10 backdrop-blur-2xl rounded-3xl p-8 border border-white/20 hover:scale-105 hover:border-orange-500/50 hover:shadow-2xl hover:shadow-orange-500/40 transition-all cursor-pointer">
-                {index < 3 && (
-                  <div className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-600 rounded-full flex items-center justify-center text-black font-black text-xl shadow-2xl z-10">
-                    {index === 0 ? '1st' : index === 1 ? '2nd' : '3rd'}
-                  </div>
-                )}
+                {i < 3 && <div className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-600 rounded-full flex items-center justify-center text-black font-black text-xl shadow-2xl z-10">
+                  {i === 0 ? '1st' : i === 1 ? '2nd' : '3rd'}
+                </div>}
                 {item.type === 'tour' ? (
                   <>
                     <div className="text-4xl font-black text-emerald-400 mb-2">{item.time}</div>
-                    <div className="bg-gradient-to-r from-orange-500 to-red-600 text-white text-sm px-4 py-2 rounded-full font-bold mb-4 inline-block animate-pulse">
-                      {item.seats} seats left
-                    </div>
+                    <div className="bg-gradient-to-r from-orange-500 to-red-600 text-white text-sm px-4 py-2 rounded-full font-bold mb-4 inline-block animate-pulse">{item.seats} seats left</div>
                   </>
-                ) : (
-                  <div className="text-6xl mb-4">{item.icon || 'Fire'}</div>
-                )}
+                ) : <div className="text-6xl mb-4">{item.icon || 'Fire'}</div>}
                 <h3 className="text-2xl font-black mb-3">{item.title}</h3>
                 {item.type === 'tour' && <p className="opacity-70 text-sm">Guide: {item.guide}</p>}
                 <p className="text-3xl font-bold mt-4 text-yellow-400">{item.price}</p>
@@ -224,31 +197,22 @@ function MainSite() {
         </div>
       </section>
 
-      {/* POPUP — NOW FULLY DARK/LIGHT MODE COMPATIBLE */}
+      {/* POPUP */}
       {popupItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/70 dark:bg-black/70 bg-white/70" onClick={() => setPopupItem(null)}>
-          <div 
-            onClick={e => e.stopPropagation()} 
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/70" onClick={() => setPopupItem(null)}>
+          <div onClick={e => e.stopPropagation()} 
             className={`relative max-w-md w-full rounded-3xl p-10 shadow-2xl border-2
               ${isDark 
                 ? 'bg-gradient-to-br from-black/90 via-purple-900/50 to-black/90 backdrop-blur-3xl border-emerald-500/50' 
                 : 'bg-gradient-to-br from-white/95 via-purple-100/50 to-white/95 backdrop-blur-3xl border-emerald-400/50'
-              }`}
-          >
+              }`}>
             <button onClick={() => setPopupItem(null)} className="absolute top-4 right-6 text-4xl opacity-70 hover:opacity-100">×</button>
-            <h3 className={`text-4xl font-black text-center mb-6 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent`}>
-              {popupItem.title}
-            </h3>
-            <p className={`text-center text-lg mb-8 ${isDark ? 'opacity-90' : 'opacity-80'}`}>
-              {popupItem.desc || 'Unforgettable experience in Moshi'}
-            </p>
+            <h3 className="text-4xl font-black text-center mb-6 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{popupItem.title}</h3>
+            <p className={`text-center text-lg mb-8 ${isDark ? 'opacity-90' : 'opacity-80'}`}>{popupItem.desc || 'Unforgettable experience in Moshi'}</p>
             <p className="text-6xl font-black text-center text-yellow-400 mb-10">{popupItem.price}</p>
-            <a 
-              href={`https://wa.me/255747914720?text=${encodeURIComponent(`Hi! I'd like to book: ${popupItem.title} — ${popupItem.price}`)}`}
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="block text-center py-6 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black text-2xl font-black rounded-3xl hover:scale-105 transition-all shadow-2xl"
-            >
+            <a href={`https://wa.me/255747914720?text=${encodeURIComponent(`Hi! I'd like to book: ${popupItem.title} — ${popupItem.price}`)}`}
+              target="_blank" rel="noopener noreferrer"
+              className="block text-center py-6 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black text-2xl font-black rounded-3xl hover:scale-105 transition-all shadow-2xl">
               BOOK NOW
             </a>
           </div>
