@@ -145,7 +145,7 @@ function MainSite() {
         </div>
       </section>
 
-      {/* MOST VISITED THIS WEEK - HORIZONTAL CAROUSEL */}
+      {/* MOST VISITED THIS WEEK - IMAGE CAROUSEL */}
       {trendingItems.length > 0 && (
         <section className="px-6 pb-20">
           <h2 className="text-5xl font-black text-center mb-12 bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 bg-clip-text text-transparent">
@@ -157,45 +157,68 @@ function MainSite() {
               <div
                 key={item.id}
                 onClick={() => handleItemClick(item)}
-                className="flex-none w-80 snap-center group relative bg-white/10 backdrop-blur-2xl rounded-3xl p-8 border border-white/20 hover:scale-105 hover:border-orange-500/50 hover:shadow-2xl hover:shadow-orange-500/40 transition-all cursor-pointer"
+                className="flex-none w-96 snap-center group relative rounded-3xl overflow-hidden h-96 cursor-pointer shadow-2xl"
               >
+                <img 
+                  src={item.imageUrl || 'https://via.placeholder.com/800x600?text=No+Image'} 
+                  alt={item.title}
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                
                 {i < 3 && (
-                  <div className="absolute -top-4 -left-4 w-14 h-14 bg-gradient-to-br from-yellow-400 to-orange-600 rounded-full flex items-center justify-center text-black font-black text-xl shadow-2xl z-10">
+                  <div className="absolute top-4 left-4 w-14 h-14 bg-gradient-to-br from-yellow-400 to-orange-600 rounded-full flex items-center justify-center text-black font-black text-xl shadow-2xl z-10">
                     {i === 0 ? '1st' : i === 1 ? '2nd' : '3rd'}
                   </div>
                 )}
-                {item.type === 'tour' ? (
-                  <>
-                    <div className="text-4xl font-black text-emerald-400 mb-2">{item.time}</div>
-                    <div className="bg-gradient-to-r from-orange-500 to-red-600 text-white text-sm px-4 py-2 rounded-full font-bold mb-4 inline-block animate-pulse">
-                      {item.seats} seats left
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-6xl mb-4">{item.icon || '🔥'}</div>
-                )}
-                <h3 className="text-2xl font-black mb-3">{item.title}</h3>
-                {item.type === 'tour' && <p className="opacity-70 text-sm">Guide: {item.guide}</p>}
-                <p className="text-3xl font-bold mt-4 text-yellow-400">{item.price}</p>
+                
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                  {item.type === 'tour' && (
+                    <>
+                      <div className="text-lg font-bold text-emerald-400 mb-1">{item.time || ''}</div>
+                      {item.seats && (
+                        <div className="bg-gradient-to-r from-orange-500 to-red-600 text-sm px-4 py-2 rounded-full font-bold inline-block mb-3 animate-pulse">
+                          {item.seats} seats left
+                        </div>
+                      )}
+                    </>
+                  )}
+                  <h3 className="text-2xl font-black mb-2">{item.title}</h3>
+                  {item.type === 'tour' && item.guide && <p className="text-sm opacity-80 mb-2">Guide: {item.guide}</p>}
+                  <p className="text-3xl font-bold text-yellow-400">{item.price}</p>
+                </div>
               </div>
             ))}
           </div>
         </section>
       )}
 
-      {/* MAIN GRID */}
+      {/* MAIN GRID - IMAGE CARDS */}
       <section className="px-6 py-20">
         <h2 className="text-5xl font-black text-center mb-12 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
           {selectedCategory === 'all' ? 'EVERYTHING' : selectedCategory.toUpperCase()}
         </h2>
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {filteredActivities.map(item => (
-            <div key={item.id} onClick={() => handleItemClick(item)}
-              className="group relative rounded-3xl p-8 text-center cursor-pointer bg-white/10 backdrop-blur-2xl border border-white/20 hover:scale-105 hover:border-emerald-500/50 hover:shadow-2xl hover:shadow-emerald-500/30 transition-all">
-              <div className="text-6xl mb-4">{item.icon || '⭐'}</div>
-              <h3 className="text-xl font-black mb-3 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{item.title}</h3>
-              <p className="text-sm opacity-80 mb-4">{item.desc}</p>
-              <p className="text-2xl font-black text-yellow-400">{item.price}</p>
+            <div 
+              key={item.id} 
+              onClick={() => handleItemClick(item)}
+              className="group relative rounded-3xl overflow-hidden h-80 cursor-pointer shadow-2xl hover:scale-105 transition-all"
+            >
+              <img 
+                src={item.imageUrl || 'https://via.placeholder.com/800x600?text=No+Image'} 
+                alt={item.title}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+              
+              <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                <h3 className="text-2xl font-black mb-3 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                  {item.title}
+                </h3>
+                <p className="text-sm opacity-90 mb-4 line-clamp-2">{item.desc || ''}</p>
+                <p className="text-3xl font-black text-yellow-400">{item.price}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -211,6 +234,11 @@ function MainSite() {
                 : 'bg-gradient-to-br from-white/95 via-purple-100/50 to-white/95 backdrop-blur-3xl border-emerald-400/50'
               }`}>
             <button onClick={() => setPopupItem(null)} className="absolute top-4 right-6 text-4xl opacity-70 hover:opacity-100">×</button>
+            
+            {popupItem.imageUrl && (
+              <img src={popupItem.imageUrl} alt={popupItem.title} className="w-full h-64 object-cover rounded-2xl mb-6" />
+            )}
+            
             <h3 className="text-4xl font-black text-center mb-6 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{popupItem.title}</h3>
             <p className={`text-center text-lg mb-8 ${isDark ? 'opacity-90' : 'opacity-80'}`}>{popupItem.desc || 'Unforgettable experience in Moshi'}</p>
             <p className="text-6xl font-black text-center text-yellow-400 mb-10">{popupItem.price}</p>
