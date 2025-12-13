@@ -31,6 +31,7 @@ function MainSite() {
   const [trendingItems, setTrendingItems] = useState([])
   const [popupItem, setPopupItem] = useState(null)
   const [selectedCategory, setSelectedCategory] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     const saved = localStorage.getItem('moshi-theme')
@@ -85,9 +86,17 @@ function MainSite() {
 
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
 
-  const filteredActivities = selectedCategory === 'all'
-    ? allItems
-    : allItems.filter(a => a.category === selectedCategory)
+  const filteredItems = allItems
+    .filter(item => selectedCategory === 'all' || item.category === selectedCategory)
+    .filter(item => {
+      if (!searchQuery) return true
+      const query = searchQuery.toLowerCase()
+      return (
+        item.title?.toLowerCase().includes(query) ||
+        item.desc?.toLowerCase().includes(query) ||
+        item.category?.includes(query)
+      )
+    })
 
   const categories = [
     { id: 'all', name: 'Everything' },
@@ -111,7 +120,7 @@ function MainSite() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl animate-pulse animation-delay-4000"/>
       </div>
 
-      {/* THEME TOGGLE ONLY */}
+      {/* THEME TOGGLE */}
       <button onClick={toggleTheme} className="fixed top-6 right-6 z-50 p-4 rounded-full bg-white/20 backdrop-blur-2xl border border-white/30 hover:scale-110 transition-all shadow-2xl">
         {isDark ? <SunIcon /> : <MoonIcon />}
       </button>
@@ -124,6 +133,36 @@ function MainSite() {
         <p className="text-2xl mt-6 opacity-80">What can you do right now?</p>
         <p className="text-lg mt-3 opacity-60">Updated {today}</p>
         {weather && <div className="mt-10"><span className="text-4xl font-bold text-yellow-400 animate-pulse">{weather}°C</span><span className="ml-3 text-lg opacity-70">in Moshi</span></div>}
+
+        {/* GLOWING NEON SEARCH BAR */}
+        <div className="max-w-md mx-auto mt-12">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search experiences..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-14 pl-14 pr-14 text-lg bg-black/40 backdrop-blur-xl rounded-full border-0 outline-none text-white placeholder:text-white/50"
+              style={{
+                boxShadow: '0 0 30px rgba(147, 51, 234, 0.6), inset 0 0 20px rgba(147, 51, 234, 0.2)'
+              }}
+            />
+            
+            {/* Magnifying Glass Icon */}
+            <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8">
+              <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="text-purple-400 drop-shadow-[0_0_8px_rgba(147,51,234,0.8)]">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            
+            {/* Voice Mic Icon */}
+            <div className="absolute right-5 top-1/2 -translate-y-1/2 w-8 h-8">
+              <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="text-purple-400 drop-shadow-[0_0_8px_rgba(147,51,234,0.8)]">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              </svg>
+            </div>
+          </div>
+        </div>
       </header>
 
       {/* CATEGORY FILTER CHIPS */}
@@ -145,7 +184,7 @@ function MainSite() {
         </div>
       </section>
 
-      {/* MOST VISITED THIS WEEK - IMAGE CAROUSEL */}
+      {/* MOST VISITED THIS WEEK */}
       {trendingItems.length > 0 && (
         <section className="px-6 pb-20">
           <h2 className="text-5xl font-black text-center mb-12 bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 bg-clip-text text-transparent">
@@ -193,38 +232,42 @@ function MainSite() {
         </section>
       )}
 
-      {/* MAIN GRID - IMAGE CARDS */}
+      {/* MAIN GRID */}
       <section className="px-6 py-20">
         <h2 className="text-5xl font-black text-center mb-12 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-          {selectedCategory === 'all' ? 'EVERYTHING' : selectedCategory.toUpperCase()}
+          {searchQuery ? `Results for "${searchQuery}"` : selectedCategory === 'all' ? 'EVERYTHING' : selectedCategory.toUpperCase()}
         </h2>
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {filteredActivities.map(item => (
-            <div 
-              key={item.id} 
-              onClick={() => handleItemClick(item)}
-              className="group relative rounded-3xl overflow-hidden h-80 cursor-pointer shadow-2xl hover:scale-105 transition-all"
-            >
-              <img 
-                src={item.imageUrl || 'https://via.placeholder.com/800x600?text=No+Image'} 
-                alt={item.title}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-              
-              <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                <h3 className="text-2xl font-black mb-3 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                  {item.title}
-                </h3>
-                <p className="text-sm opacity-90 mb-4 line-clamp-2">{item.desc || ''}</p>
-                <p className="text-3xl font-black text-yellow-400">{item.price}</p>
+          {filteredItems.length === 0 ? (
+            <p className="col-span-full text-center text-2xl opacity-60">No results found — try another search!</p>
+          ) : (
+            filteredItems.map(item => (
+              <div 
+                key={item.id} 
+                onClick={() => handleItemClick(item)}
+                className="group relative rounded-3xl overflow-hidden h-80 cursor-pointer shadow-2xl hover:scale-105 transition-all"
+              >
+                <img 
+                  src={item.imageUrl || 'https://via.placeholder.com/800x600?text=No+Image'} 
+                  alt={item.title}
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                  <h3 className="text-2xl font-black mb-3 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                    {item.title}
+                  </h3>
+                  <p className="text-sm opacity-90 mb-4 line-clamp-2">{item.desc || ''}</p>
+                  <p className="text-3xl font-black text-yellow-400">{item.price}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </section>
 
-      {/* POPUP - WITH CONFETTI ON BOOK */}
+      {/* POPUP */}
       {popupItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/70" onClick={() => setPopupItem(null)}>
           <div onClick={e => e.stopPropagation()} 
