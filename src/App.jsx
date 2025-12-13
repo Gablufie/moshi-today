@@ -55,6 +55,7 @@ function MainSite() {
   const [activities, setActivities] = useState([])
   const [allItems, setAllItems] = useState([])
   const [trendingItems, setTrendingItems] = useState([])
+  const [dealItems, setDealItems] = useState([])
   const [popupItem, setPopupItem] = useState(null)
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -92,7 +93,7 @@ function MainSite() {
     localStorage.setItem('moshi-theme', newMode ? 'dark' : 'light')
   }
 
-  // Data loading
+  // Data
   useEffect(() => {
     const unsubTours = onSnapshot(collection(db, 'tours'), (snap) => {
       const data = snap.docs.map(d => ({ id: d.id, type: 'tour', ...d.data() })).filter(t => t.active !== false)
@@ -116,6 +117,9 @@ function MainSite() {
       .sort((a, b) => (b.clicksThisWeek || 0) - (a.clicksThisWeek || 0))
       .slice(0, 6)
     setTrendingItems(trending)
+    
+    const deals = combined.filter(item => item.isDealOfTheDay === true)
+    setDealItems(deals)
   }, [tours, activities])
 
   // Weather
@@ -152,7 +156,6 @@ function MainSite() {
       )
     })
 
-  // Map coordinates
   const itemCoordinates = {
     'Materuni Waterfalls': { lat: -3.25025, lng: 37.40007 },
     'Chemka Hot Springs': { lat: -3.4445, lng: 37.1939 },
@@ -160,7 +163,6 @@ function MainSite() {
     'Marangu Waterfall': { lat: -3.25, lng: 37.4 },
     'Coffee Tour': { lat: -3.27, lng: 37.42 },
     'Kilimanjaro Day Hike': { lat: -3.3349, lng: 37.3404 },
-    // Add more as needed
   }
 
   const getCoordinates = (item) => itemCoordinates[item.title] || null
@@ -230,7 +232,7 @@ function MainSite() {
         </div>
       </header>
 
-      {/* LEFT-ALIGNED NEON CATEGORY CHIPS - ALL VISIBLE FROM START */}
+      {/* LEFT-ALIGNED NEON CATEGORY CHIPS */}
       <section className="px-6 pb-16">
         <div className="max-w-7xl mx-auto overflow-x-auto hide-scrollbar">
           <div className="flex gap-5 py-4 min-w-max">
@@ -256,6 +258,49 @@ function MainSite() {
           </div>
         </div>
       </section>
+
+      {/* DEAL OF THE DAY */}
+      {dealItems.length > 0 && (
+        <section className="px-6 pb-20">
+          <h2 className="text-5xl font-black text-center mb-12 bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 bg-clip-text text-transparent animate-pulse">
+            🔥 TODAY'S SPECIAL DEALS
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-5xl mx-auto">
+            {dealItems.map(item => (
+              <div key={item.id} className="group relative rounded-3xl overflow-hidden h-96 cursor-pointer shadow-2xl" onClick={() => handleItemClick(item)}>
+                <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
+                {/* SPECIAL BADGE */}
+                <div className="absolute top-4 left-4 z-10">
+                  <div className="bg-gradient-to-r from-yellow-400 to-red-600 text-black font-black px-6 py-3 rounded-full text-xl shadow-2xl animate-pulse">
+                    TODAY'S SPECIAL
+                  </div>
+                  {item.dealNote && (
+                    <div className="mt-2 bg-black/70 text-white px-4 py-2 rounded-full text-sm font-bold">
+                      {item.dealNote}
+                    </div>
+                  )}
+                </div>
+
+                {/* HEART */}
+                <div className="absolute top-4 right-4 z-10">
+                  <HeartIcon filled={isFavorite(item.id)} onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id) }} />
+                </div>
+
+                <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
+                  <h3 className="text-4xl font-black mb-3">{item.title}</h3>
+                  {item.originalPrice && (
+                    <p className="text-xl opacity-70 line-through mb-2">{item.originalPrice}</p>
+                  )}
+                  <p className="text-5xl font-black text-yellow-400">{item.price}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* MAP VIEW */}
       {selectedCategory === 'map' ? (
@@ -298,11 +343,11 @@ function MainSite() {
         </section>
       ) : (
         <>
-          {/* TRENDING */}
+          {/* TRENDING - CHANGED TO "Hot Picks This Week" */}
           {trendingItems.length > 0 && (
             <section className="px-6 pb-20">
               <h2 className="text-5xl font-black text-center mb-12 bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 bg-clip-text text-transparent">
-                MOST VISITED THIS WEEK
+                Hot Picks This Week
               </h2>
               <div className="overflow-x-auto flex gap-8 pb-8 hide-scrollbar snap-x">
                 {trendingItems.map((item, i) => (
