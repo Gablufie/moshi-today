@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import 'leaflet/dist/leaflet.css';
 
 .hide-scrollbar {
     -ms-overflow-style: none;  /* IE and Edge */
