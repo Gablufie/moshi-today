@@ -272,7 +272,6 @@ function MainSite() {
                 <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
-                {/* SPECIAL BADGE */}
                 <div className="absolute top-4 left-4 z-10">
                   <div className="bg-gradient-to-r from-yellow-400 to-red-600 text-black font-black px-6 py-3 rounded-full text-xl shadow-2xl animate-pulse">
                     TODAY'S SPECIAL
@@ -284,7 +283,6 @@ function MainSite() {
                   )}
                 </div>
 
-                {/* HEART */}
                 <div className="absolute top-4 right-4 z-10">
                   <HeartIcon filled={isFavorite(item.id)} onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id) }} />
                 </div>
@@ -343,27 +341,38 @@ function MainSite() {
         </section>
       ) : (
         <>
-          {/* TRENDING - CHANGED TO "Hot Picks This Week" */}
+          {/* HOT PICKS THIS WEEK - RESPONSIVE CAROUSEL */}
           {trendingItems.length > 0 && (
             <section className="px-6 pb-20">
               <h2 className="text-5xl font-black text-center mb-12 bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 bg-clip-text text-transparent">
                 Hot Picks This Week
               </h2>
-              <div className="overflow-x-auto flex gap-8 pb-8 hide-scrollbar snap-x">
+
+              <div className="overflow-x-auto flex gap-6 pb-8 hide-scrollbar snap-x md:gap-8">
                 {trendingItems.map((item, i) => (
-                  <div key={item.id} className="flex-none w-96 snap-center group relative rounded-3xl overflow-hidden h-96 cursor-pointer shadow-2xl">
+                  <div 
+                    key={item.id} 
+                    className="flex-none w-80 snap-center group relative rounded-3xl overflow-hidden h-96 cursor-pointer shadow-2xl md:w-96"
+                  >
                     <div onClick={() => handleItemClick(item)} className="absolute inset-0">
-                      <img src={item.imageUrl || 'https://via.placeholder.com/800x600?text=No+Image'} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                      <img 
+                        src={item.imageUrl || 'https://via.placeholder.com/800x600?text=No+Image'} 
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                     </div>
+
                     <div className="absolute top-4 right-4 z-10">
                       <HeartIcon filled={isFavorite(item.id)} onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id) }} />
                     </div>
+
                     {i < 3 && (
                       <div className="absolute top-4 left-4 w-14 h-14 bg-gradient-to-br from-yellow-400 to-orange-600 rounded-full flex items-center justify-center text-black font-black text-xl shadow-2xl z-10">
                         {i === 0 ? '1st' : i === 1 ? '2nd' : '3rd'}
                       </div>
                     )}
+
                     <div className="absolute bottom-0 left-0 right-0 p-6 text-white pointer-events-none">
                       {item.type === 'tour' && (
                         <>
