@@ -6,12 +6,12 @@ import { db } from './firebase'
 import { collection, onSnapshot, doc, updateDoc, increment, serverTimestamp } from 'firebase/firestore'
 import confetti from 'canvas-confetti'
 
-// Leaflet imports
+// Leaflet
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-// Fix Leaflet default icon issue in React
+// Fix Leaflet icon
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -19,7 +19,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
-// SUN & MOON
+// Icons
 const SunIcon = () => (
   <svg className="w-7 h-7 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <circle cx="12" cy="12" r="5" />
@@ -35,7 +35,6 @@ const MoonIcon = () => (
   </svg>
 )
 
-// HEART ICON
 const HeartIcon = ({ filled, onClick }) => (
   <svg 
     onClick={onClick}
@@ -61,7 +60,7 @@ function MainSite() {
   const [searchQuery, setSearchQuery] = useState('')
   const [favorites, setFavorites] = useState([])
 
-  // Favorites logic
+  // Favorites
   useEffect(() => {
     const saved = localStorage.getItem('moshi-favorites')
     if (saved) setFavorites(JSON.parse(saved))
@@ -81,6 +80,7 @@ function MainSite() {
 
   const isFavorite = (itemId) => favorites.includes(itemId)
 
+  // Theme
   useEffect(() => {
     const saved = localStorage.getItem('moshi-theme')
     if (saved === 'light') setIsDark(false)
@@ -92,6 +92,7 @@ function MainSite() {
     localStorage.setItem('moshi-theme', newMode ? 'dark' : 'light')
   }
 
+  // Data loading
   useEffect(() => {
     const unsubTours = onSnapshot(collection(db, 'tours'), (snap) => {
       const data = snap.docs.map(d => ({ id: d.id, type: 'tour', ...d.data() })).filter(t => t.active !== false)
@@ -117,6 +118,7 @@ function MainSite() {
     setTrendingItems(trending)
   }, [tours, activities])
 
+  // Weather
   useEffect(() => {
     fetch('https://api.open-meteo.com/v1/forecast?latitude=-3.35&longitude=37.33&current=temperature_2m&timezone=Africa/Dar_es_Salaam')
       .then(r => r.json())
@@ -134,7 +136,6 @@ function MainSite() {
 
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
 
-  // Filtering
   const filteredItems = allItems
     .filter(item => {
       if (selectedCategory === 'saved') return isFavorite(item.id)
@@ -151,7 +152,7 @@ function MainSite() {
       )
     })
 
-  // MAP COORDINATES (add or adjust to match your exact titles)
+  // Map coordinates
   const itemCoordinates = {
     'Materuni Waterfalls': { lat: -3.25025, lng: 37.40007 },
     'Chemka Hot Springs': { lat: -3.4445, lng: 37.1939 },
@@ -159,7 +160,7 @@ function MainSite() {
     'Marangu Waterfall': { lat: -3.25, lng: 37.4 },
     'Coffee Tour': { lat: -3.27, lng: 37.42 },
     'Kilimanjaro Day Hike': { lat: -3.3349, lng: 37.3404 },
-    // Add more as needed based on your Firestore titles
+    // Add more as needed
   }
 
   const getCoordinates = (item) => itemCoordinates[item.title] || null
@@ -229,19 +230,25 @@ function MainSite() {
         </div>
       </header>
 
-      {/* CENTERED CATEGORY CHIPS */}
-      <section className="px-6 pb-12">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex overflow-x-auto gap-4 pb-4 hide-scrollbar snap-x justify-center">
+      {/* LEFT-ALIGNED NEON CATEGORY CHIPS - ALL VISIBLE FROM START */}
+      <section className="px-6 pb-16">
+        <div className="max-w-7xl mx-auto overflow-x-auto hide-scrollbar">
+          <div className="flex gap-5 py-4 min-w-max">
             {categories.map(cat => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`flex-none px-8 py-4 rounded-full font-bold whitespace-nowrap transition-all snap-center
-                  ${selectedCategory === cat.id 
-                    ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-black shadow-lg scale-105' 
-                    : 'bg-white/20 backdrop-blur-2xl border border-white/30 hover:bg-white/30'
-                  }`}
+                className="flex-none px-8 py-4 rounded-full font-bold text-lg whitespace-nowrap transition-all"
+                style={{
+                  background: selectedCategory === cat.id ? 'linear-gradient(to right, #10b981, #06b6d4)' : 'rgba(0, 0, 0, 0.4)',
+                  backdropFilter: 'blur(12px)',
+                  boxShadow: selectedCategory === cat.id 
+                    ? '0 0 30px rgba(16, 185, 129, 0.8)' 
+                    : '0 0 30px rgba(147, 51, 234, 0.4), inset 0 0 20px rgba(147, 51, 234, 0.1)',
+                  color: selectedCategory === cat.id ? 'black' : 'white',
+                  border: '1px solid rgba(147, 51, 234, 0.3)',
+                  transform: selectedCategory === cat.id ? 'scale(1.1)' : 'scale(1)'
+                }}
               >
                 {cat.name}
               </button>
@@ -291,13 +298,12 @@ function MainSite() {
         </section>
       ) : (
         <>
-          {/* TRENDING CAROUSEL */}
+          {/* TRENDING */}
           {trendingItems.length > 0 && (
             <section className="px-6 pb-20">
               <h2 className="text-5xl font-black text-center mb-12 bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 bg-clip-text text-transparent">
                 MOST VISITED THIS WEEK
               </h2>
-
               <div className="overflow-x-auto flex gap-8 pb-8 hide-scrollbar snap-x">
                 {trendingItems.map((item, i) => (
                   <div key={item.id} className="flex-none w-96 snap-center group relative rounded-3xl overflow-hidden h-96 cursor-pointer shadow-2xl">
@@ -305,17 +311,14 @@ function MainSite() {
                       <img src={item.imageUrl || 'https://via.placeholder.com/800x600?text=No+Image'} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                     </div>
-
                     <div className="absolute top-4 right-4 z-10">
                       <HeartIcon filled={isFavorite(item.id)} onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id) }} />
                     </div>
-
                     {i < 3 && (
                       <div className="absolute top-4 left-4 w-14 h-14 bg-gradient-to-br from-yellow-400 to-orange-600 rounded-full flex items-center justify-center text-black font-black text-xl shadow-2xl z-10">
                         {i === 0 ? '1st' : i === 1 ? '2nd' : '3rd'}
                       </div>
                     )}
-
                     <div className="absolute bottom-0 left-0 right-0 p-6 text-white pointer-events-none">
                       {item.type === 'tour' && (
                         <>
@@ -354,11 +357,9 @@ function MainSite() {
                       <img src={item.imageUrl || 'https://via.placeholder.com/800x600?text=No+Image'} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                     </div>
-
                     <div className="absolute top-4 right-4 z-10">
                       <HeartIcon filled={isFavorite(item.id)} onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id) }} />
                     </div>
-
                     <div className="absolute bottom-0 left-0 right-0 p-6 text-white pointer-events-none">
                       <h3 className="text-2xl font-black mb-3 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
                         {item.title}
